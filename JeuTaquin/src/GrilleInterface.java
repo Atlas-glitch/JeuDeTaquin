@@ -1,27 +1,29 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class GrilleInterface {
 
-    private JLabel[][] cases;
-    private int[] emptySpace = new int[2];
-    private int[][] solvedGrid;
-    private boolean[][] validatedTiles;
+    private final JLabel[][] cases;
+    private final int nbl;
+    private final int nbc;
+    private final int[] emptySpace = new int[2];
+    private final int[][] solvedGrid;
+    private final boolean[][] validatedTiles;
 
-    private final Dimension baseWindowSize = new Dimension(600,600);
-    private final Dimension minWindowSize = new Dimension(350,350);
     private final Color emptyTileColor = new Color(159, 210, 252);
     private final Color gridTilesColor = new Color(103, 164, 214);
     private final Color validatedTileColor = new Color(136, 227, 166);
+    private final Color finishedTileColor = new Color(224, 242, 102);
 
-    private JFrame frame;
-    private KeyListener gridKeyListener;
+    private final JFrame frame;
+    private final KeyListener gridKeyListener;
 
-    public GrilleInterface(JeuTaquin jeu){
-        int nbl = jeu.getNbl();
-        int nbc = jeu.getNbc();
+    public GrilleInterface(JeuTaquin jeu) {
+        nbl = jeu.getNbl();
+        nbc = jeu.getNbc();
 
         gridKeyListener = new KeyListener(){
             @Override
@@ -76,10 +78,31 @@ public class GrilleInterface {
                     becomeEmpty.setBackground(emptyTileColor);
                     becomeEmpty.setText("");
 
-                    validateTilePosition(emptySpace);
+                    int[] movedTile = {emptySpace[0], emptySpace[1]};
 
                     emptySpace[0] = nextSpace[0];
                     emptySpace[1] = nextSpace[1];
+
+                    if(validateTilePosition(movedTile)){
+                        if(validateGrid()){
+                            final int[] c = { 0, 0 };
+                            Timer timer = new Timer(80, null);
+                            ActionListener ac = e1 -> {
+                                cases[c[0]][c[1]].setBackground(finishedTileColor);
+                                c[1]++;
+                                if(c[1] == nbc){
+                                    c[1] = 0;
+                                    c[0]++;
+                                    if(c[0] == nbl){
+                                        timer.stop();
+                                    }
+                                }
+                            };
+                            timer.addActionListener(ac);
+                            timer.setRepeats(true);
+                            timer.start();
+                        }
+                    }
 
                 }
             }
@@ -87,20 +110,15 @@ public class GrilleInterface {
 
         int[][] values = jeu.returnValues();
         cases = new JLabel[nbl][nbc];
-
-        solvedGrid = new int[nbl][nbc];
+        solvedGrid = jeu.getSolvedGrid();
         validatedTiles = new boolean[nbl][nbc];
-        int v=1;
-        for(int i=0;i<nbl;i++){
-            for(int j=0;j<nbc;j++){
-                solvedGrid[i][j] = v++;
-            }
-        }
 
         frame = new JFrame("Jeu de Taquin");
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        Dimension baseWindowSize = new Dimension(800, 800);
         frame.setSize(baseWindowSize);
+        Dimension minWindowSize = new Dimension(650, 650);
         frame.setMinimumSize(minWindowSize);
         frame.setLocationRelativeTo(null);
 
@@ -115,8 +133,6 @@ public class GrilleInterface {
                 if(values[i][j] != 0) {
                     l = new JLabel(String.valueOf(values[i][j]), SwingConstants.CENTER);
                     l.setBackground(gridTilesColor);
-                    /*int[] tbVal = {i,j};
-                    validateTilePosition(tbVal);*/
                 }
                 else
                 {
@@ -131,41 +147,56 @@ public class GrilleInterface {
                 l.setBorder(BorderFactory.createLineBorder(Color.BLACK));
                 panel.add(l);
                 cases[i][j] = l;
+
+                int tileSpace = solvedGrid[i][j];
+
+                if(values[i][j] == tileSpace){
+                    l.setBackground(validatedTileColor);
+                    validatedTiles[i][j] = true;
+
+                    validateGrid();
+                }
             }
         }
 
         frame.add(panel);
-        //System.out.println("WAS x: "+emptySpace[0]+", y: "+emptySpace[1]);
         frame.addKeyListener(gridKeyListener);
     }
 
-    private void validateTilePosition(int[] tilePos){
+    private boolean validateTilePosition(int[] tilePos) {
+        boolean result = false;
         JLabel tile = cases[tilePos[0]][tilePos[1]];
-        int tileNb = Integer.valueOf(tile.getText());
+        int tileNb = Integer.parseInt(tile.getText());
         int tileSpace = solvedGrid[tilePos[0]][tilePos[1]];
 
         if(tileNb == tileSpace){
             tile.setBackground(validatedTileColor);
             validatedTiles[tilePos[0]][tilePos[1]] = true;
 
-            validateGrid();
+            result = true;
         }
         else
         {
             validatedTiles[tilePos[0]][tilePos[1]] = false;
         }
+
+        return result;
     }
 
-    private void validateGrid(){
+    private boolean validateGrid() {
         boolean finished = true;
         System.out.println("-----------------------");
-        for(int i=0;i<validatedTiles.length;i++){
-            String line="| ";
-            for(int j=0;j<validatedTiles[i].length;j++){
-                if(!validatedTiles[i][j]){
-                    finished = false;
+        for (int i = 0; i < validatedTiles.length; i++) {
+            boolean[] validatedTile = validatedTiles[i];
+            StringBuilder line = new StringBuilder("| ");
+            for (int j = 0; j < validatedTile.length; j++) {
+                boolean b = validatedTile[j];
+                if (!b) {
+                    if(i != nbl-1 || j != nbc-1) {
+                        finished = false;
+                    }
                 }
-                line+=(validatedTiles[i][j]+" |");
+                line.append(b).append(" |");
             }
             System.out.println(line);
             System.out.println("-----------------------");
@@ -173,11 +204,11 @@ public class GrilleInterface {
 
         if(finished){
             frame.removeKeyListener(gridKeyListener);
-            System.out.println("finished!");
+            JLabel fSquare = cases[nbl-1][nbc-1];
+            fSquare.setBackground(validatedTileColor);
+            fSquare.setText(String.valueOf(solvedGrid[nbl-1][nbc-1]));
         }
-        else
-        {
-            System.out.println("not finished!");
-        }
+
+        return finished;
     }
 }
