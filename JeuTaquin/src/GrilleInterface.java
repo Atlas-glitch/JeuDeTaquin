@@ -188,7 +188,7 @@ public class GrilleInterface {
         System.out.println("-----------------------");
         for (int i = 0; i < validatedTiles.length; i++) {
             boolean[] validatedTile = validatedTiles[i];
-            StringBuilder line = new StringBuilder("| ");
+            //StringBuilder line = new StringBuilder("| ");
             for (int j = 0; j < validatedTile.length; j++) {
                 boolean b = validatedTile[j];
                 if (!b) {
@@ -196,10 +196,10 @@ public class GrilleInterface {
                         finished = false;
                     }
                 }
-                line.append(b).append(" |");
+                //line.append(b).append(" |");
             }
-            System.out.println(line);
-            System.out.println("-----------------------");
+            /*System.out.println(line);
+            System.out.println("-----------------------");*/
         }
 
         if(finished){
