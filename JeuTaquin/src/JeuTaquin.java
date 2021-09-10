@@ -6,69 +6,12 @@ public class JeuTaquin implements Jeu {
     private int[][] val, solvedGrid;
     private int li, lj, nbl, nbc, indice;
     private GrilleInterface[] lst;
+    private boolean solvable;
 
     public JeuTaquin(int nbl, int nbc, GrilleInterface[] lst) {
-        if(nbl < 2 && nbc < 2) {
-            throw new IllegalArgumentException(
-                    "Nombre de ligne et de colonne minimum : 2 (nbLigne : " + nbl + ", nbColonne : " + nbc + ")"
-            );
-        }
-
-        this.nbl = nbl;
-        this.nbc = nbc;
         this.lst = lst;
-        val = new int[nbl][nbc];
-        solvedGrid = new int[nbl][nbc];
-        this.initTabResolu();
-        int nbEchanges, nbEchangesZero;
-        int nbNbs = nbl * nbc;
-        ArrayList<Integer> numbers = new ArrayList<Integer>();
-        Random rand = new Random();
-
-        for (int i = 0; i < nbNbs; i++) {
-            numbers.add(i);
-        }
-        for (int i = 0; i < nbl; i++) {
-            System.out.println("-------------");
-            String line="| ";
-            for (int j = 0; j < nbc; j++) {
-                int k = rand.nextInt(numbers.size());
-                int nb = numbers.get(k);
-                val[i][j] = nb;
-
-                numbers.remove(k);
-                if (nb == 0) {
-                    lj = j;
-                    li = i;
-                }
-
-                line+=(nb+" | ");
-            }
-            System.out.println(line);
-        }
-        System.out.println("--------------");
-
-        nbEchanges = (nbEchangesFaits()%2);
-        nbEchangesZero = (nbEchangesFaitsZero()%2);
-
-        boolean solvable;
-        if (nbEchanges != nbEchangesZero) {
-            int[] position1 = getPosition(1);
-            int[] position2 = getPosition(2);
-            val[position1[0]][position1[1]] = 2;
-            val[position2[0]][position2[1]] = 1;
-            solvable = false;
-        }
-        else
-        {
-            solvable = true;
-        }
-
-        System.out.println(solvable ? "SOLVABLE" : "NOT SOLVABLE");
-
-        for(GrilleInterface gi : lst){
-            gi.createWithData(this, solvable);
-        }
+        this.generate(nbl, nbc);
+        this.sendDataToListeners();
     }
 
     @Override
@@ -226,5 +169,68 @@ public class JeuTaquin implements Jeu {
 
     public int[][] getSolvedGrid(){
         return this.solvedGrid;
+    }
+
+    private void sendDataToListeners(){
+        for(GrilleInterface gi : lst){
+            gi.createWithData(this, this.solvable);
+        }
+    }
+
+    private void generate(int nbl, int nbc){
+        this.nbl = nbl;
+        this.nbc = nbc;
+        val = new int[nbl][nbc];
+        solvedGrid = new int[nbl][nbc];
+        this.initTabResolu();
+        int nbEchanges, nbEchangesZero;
+        int nbNbs = nbl * nbc;
+        ArrayList<Integer> numbers = new ArrayList<Integer>();
+        Random rand = new Random();
+
+        for (int i = 0; i < nbNbs; i++) {
+            numbers.add(i);
+        }
+        for (int i = 0; i < nbl; i++) {
+            System.out.println("-------------");
+            String line="| ";
+            for (int j = 0; j < nbc; j++) {
+                int k = rand.nextInt(numbers.size());
+                int nb = numbers.get(k);
+                val[i][j] = nb;
+
+                numbers.remove(k);
+                if (nb == 0) {
+                    lj = j;
+                    li = i;
+                }
+
+                line+=(nb+" | ");
+            }
+            System.out.println(line);
+        }
+        System.out.println("--------------");
+
+        nbEchanges = (nbEchangesFaits()%2);
+        nbEchangesZero = (nbEchangesFaitsZero()%2);
+
+        if (nbEchanges != nbEchangesZero) {
+            int[] position1 = getPosition(1);
+            int[] position2 = getPosition(2);
+            val[position1[0]][position1[1]] = 2;
+            val[position2[0]][position2[1]] = 1;
+            this.solvable = false;
+        }
+        else
+        {
+            this.solvable = true;
+        }
+
+        System.out.println(this.solvable ? "SOLVABLE" : "NOT SOLVABLE");
+    }
+
+    public void recreate(){
+        this.generate(this.nbl, this.nbc);
+        this.sendDataToListeners();
     }
 }
