@@ -5,10 +5,18 @@ import java.util.Random;
 public class JeuTaquin implements Jeu {
     private int[][] val, solvedGrid;
     private int li, lj, nbl, nbc, indice;
+    private GrilleInterface[] lst;
 
-    public JeuTaquin(int nbl, int nbc) {
+    public JeuTaquin(int nbl, int nbc, GrilleInterface[] lst) {
+        if(nbl < 2 && nbc < 2) {
+            throw new IllegalArgumentException(
+                    "Nombre de ligne et de colonne minimum : 2 (nbLigne : " + nbl + ", nbColonne : " + nbc + ")"
+            );
+        }
+
         this.nbl = nbl;
         this.nbc = nbc;
+        this.lst = lst;
         val = new int[nbl][nbc];
         solvedGrid = new int[nbl][nbc];
         this.initTabResolu();
@@ -42,13 +50,24 @@ public class JeuTaquin implements Jeu {
 
         nbEchanges = (nbEchangesFaits()%2);
         nbEchangesZero = (nbEchangesFaitsZero()%2);
-        System.out.println(nbEchanges+nbEchangesZero==0 ? "SOLVABLE" : "NOT SOLVABLE");
 
+        boolean solvable;
         if (nbEchanges != nbEchangesZero) {
             int[] position1 = getPosition(1);
             int[] position2 = getPosition(2);
             val[position1[0]][position1[1]] = 2;
             val[position2[0]][position2[1]] = 1;
+            solvable = false;
+        }
+        else
+        {
+            solvable = true;
+        }
+
+        System.out.println(solvable ? "SOLVABLE" : "NOT SOLVABLE");
+
+        for(GrilleInterface gi : lst){
+            gi.createWithData(this, solvable);
         }
     }
 
@@ -198,8 +217,6 @@ public class JeuTaquin implements Jeu {
             for (int b = 0; b < solvedGrid[a].length; b++) {
                 if (indice < (nbl) * (nbc)) {
                     solvedGrid[a][b] = indice;
-                } else {
-                    solvedGrid[a][b] = 0;
                 }
                 indice++;
             }
